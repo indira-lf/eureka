@@ -48,7 +48,7 @@ import org.slf4j.LoggerFactory;
  * <code>@Auto</code> annotated fields are serialized as is; Other fields are
  * serialized as specified by the <code>@Serializer</code>.
  * </p>
- *
+ * 该类包含向 Eureka Server 注册所需的信息并被其他组件发现。
  * @author Karthik Ranganathan, Greg Kim
  */
 @ProvidedBy(EurekaConfigBasedInstanceInfoProvider.class)
@@ -136,7 +136,13 @@ public class InstanceInfo {
     private volatile boolean isUnsecurePortEnabled = true;
     private volatile DataCenterInfo dataCenterInfo;
     private volatile String hostName;
+    /**
+     * 记录当前Client在Server端的状态
+     */
     private volatile InstanceStatus status = InstanceStatus.UP;
+    /**
+     * 该状态用于计算Client在Server端的状态status(Client提交注册请求和renew续约请求的时候使用到)
+     */
     private volatile InstanceStatus overriddenStatus = InstanceStatus.UNKNOWN;
     @XStreamOmitField
     private volatile boolean isInstanceInfoDirty = false;
@@ -145,8 +151,12 @@ public class InstanceInfo {
     private volatile Boolean isCoordinatingDiscoveryServer = Boolean.FALSE;
     @XStreamAlias("metadata")
     private volatile Map<String, String> metadata;
+
+    //记录当前InstanceInfo在Server端被修改的时间戳
     @Auto
     private volatile Long lastUpdatedTimestamp;
+
+    //记录当前InstanceInfo在Client端被修改的时间戳
     @Auto
     private volatile Long lastDirtyTimestamp;
     @Auto
@@ -313,7 +323,14 @@ public class InstanceInfo {
         this.version = ii.version;
     }
 
-
+    /**
+     * DOWN和OUT_OF_SERVICE
+     *  共同点:都不能被其他服务所发现
+     *  不同点:
+     *      DOWN一般是系统内部出现了问题；例如Client和Server心跳出现了问题会变成DOWN
+     *      OUT_OF_SERVICE是人为的
+     *
+     */
     public enum InstanceStatus {
         UP, // Ready to receive traffic
         DOWN, // Do not send traffic- healthcheck callback failed
@@ -341,6 +358,11 @@ public class InstanceInfo {
         return (id == null) ? 31 : (id.hashCode() + 31);
     }
 
+    /**
+     * 重写了equals()方法，只要两个Instance的InstanceId就返回true
+     * @param obj
+     * @return
+     */
     @Override
     public boolean equals(Object obj) {
         if (this == obj) {
@@ -353,11 +375,13 @@ public class InstanceInfo {
             return false;
         }
         InstanceInfo other = (InstanceInfo) obj;
+        //获取InstanceId
         String id = getId();
         if (id == null) {
             if (other.getId() != null) {
                 return false;
             }
+        //比较两个InstanceId
         } else if (!id.equals(other.getId())) {
             return false;
         }
