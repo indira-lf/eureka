@@ -48,7 +48,9 @@ import com.thoughtworks.xstream.annotations.XStreamImplicit;
 
 /**
  * The class that wraps all the registry information returned by eureka server.
- *
+ * <p/>
+ * 该类封装了来自于Eureka Server的所有注册信息。我们可以称其为"客户端注册表"。<br/>
+ * 之所以要强调"客户端"是因为，服务端注册表不是这样表示的，是个Map
  * <p>
  * Note that the registry information is fetched from eureka server as specified
  * in {@link EurekaClientConfig#getRegistryFetchIntervalSeconds()}. Once the
@@ -84,6 +86,10 @@ public class Applications {
     private Long versionDelta;
     @XStreamImplicit
     private final AbstractQueue<Application> applications;
+    /**
+     * key:微服务名称
+     * value:Application
+     */
     private final Map<String, Application> appNameApplicationMap;
     private final Map<String, VipIndexSupport> virtualHostNameAppMap;
     private final Map<String, VipIndexSupport> secureVirtualHostNameAppMap;
